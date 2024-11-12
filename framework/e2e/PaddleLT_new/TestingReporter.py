@@ -43,13 +43,30 @@ class TestingReporter(object):
         xlsx_save(relative_fail_dict, "./relative_fail_dict.xlsx")
         return relative_fail_dict, absolute_fail_dict
 
-    def binary_search(self):
+    def get_fail_case_num(self):
+        """
+        获取失败case信息
+        """
+        layer_db = LayerBenchmarkDB(storage=self.storage)
+        relative_fail_dict, absolute_fail_dict = layer_db.get_precision_fail_case_dict(
+            task_list=self.task_list, date_interval=self.date_interval
+        )
+
+        absolute_fail_num_dict = {}
+        for task, value_dict in absolute_fail_dict.items():
+            absolute_fail_num_dict[task] = len(value_dict["absolute_fail_list"])
+        return absolute_fail_num_dict
+
+    def binary_search(self, loop_num=1):
         """
         使用二分工具
         """
         relative_fail_dict, absolute_fail_dict = self.get_fail_case_info()
         res_dict = {}
+        relative_fail_info_dict = {}
         for task, value_dict in relative_fail_dict.items():
+            relative_fail_info_dict[task] = value_dict
+            relative_fail_info_dict[task]["relative_fail_info"] = {}
             res_dict[task] = {}
             if len(value_dict["relative_fail_list"]) == 0:
                 continue
@@ -59,7 +76,11 @@ class TestingReporter(object):
                 testing = value_dict["testing"]
                 for layer_file in value_dict["relative_fail_list"]:
                     bs = BinarySearch(
-                        good_commit=baseline_commit, bad_commit=latest_commit, layerfile=layer_file, testing=testing
+                        good_commit=baseline_commit,
+                        bad_commit=latest_commit,
+                        layerfile=layer_file,
+                        testing=testing,
+                        loop_num=loop_num,
                     )
                     final_commit, commit_list, commit_list_origin, check_info = bs._run()
                     res_dict[task][layer_file] = {
@@ -68,7 +89,16 @@ class TestingReporter(object):
                         "commit_list_origin": commit_list_origin,
                         "check_info": check_info,
                     }
+                    relative_fail_info_dict[task]["relative_fail_info"].update(
+                        {
+                            layer_file: {
+                                "final_commit": final_commit,
+                                "check_info": check_info,
+                            }
+                        }
+                    )
 
+        xlsx_save(relative_fail_info_dict, "./relative_fail_info_dict.xlsx")
         return res_dict
 
     # def binary_search_old(self):
@@ -109,11 +139,15 @@ class TestingReporter(object):
 
 
 if __name__ == "__main__":
-    reporter = TestingReporter(date_interval=["2024-11-05", "2024-11-07"])
+    # reporter = TestingReporter(date_interval=["2024-11-05", "2024-11-07"])
+    reporter = TestingReporter()
     # 打印出相对失败case信息
     relative_fail_dict, absolute_fail_dict = reporter.get_fail_case_info()
     print(f"relative_fail_dict:{relative_fail_dict}")
+    absolute_fail_num_dict = reporter.get_fail_case_num()
+    print(f"absolute_fail_num_dict:{absolute_fail_num_dict}")
+    # exit(0)
     # 打印出commit定位结果
-    res_dict = reporter.binary_search()
+    res_dict = reporter.binary_search(loop_num=10)
     print("test end")
     print(f"res_dict:{res_dict}")
