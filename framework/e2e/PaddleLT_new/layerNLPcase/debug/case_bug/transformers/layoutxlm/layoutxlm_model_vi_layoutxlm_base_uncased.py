@@ -4,7 +4,7 @@ from paddlenlp.transformers import LayoutXLMModel, LayoutXLMTokenizer
 
 def LayerCase():
     """模型库中间态"""
-    model = LayoutXLMModel.from_pretrained('layoutxlm-base-uncased')
+    model = LayoutXLMModel.from_pretrained('vi-layoutxlm-base-uncased')
     return model
 
 def create_inputspec():
@@ -17,7 +17,7 @@ def create_inputspec():
 
 
 def create_tensor_inputs():
-    tokenizer = LayoutXLMTokenizer.from_pretrained('layoutxlm-base-uncased')
+    tokenizer = LayoutXLMTokenizer.from_pretrained('vi-layoutxlm-base-uncased')
     inputs_dict = tokenizer("Welcome to use PaddlePaddle and PaddleNLP!")
     inputs = (
         paddle.to_tensor([inputs_dict['input_ids']], stop_gradient=False),
@@ -28,7 +28,7 @@ def create_tensor_inputs():
 
 
 def create_numpy_inputs():
-    tokenizer = LayoutXLMTokenizer.from_pretrained('layoutxlm-base-uncased')
+    tokenizer = LayoutXLMTokenizer.from_pretrained('vi-layoutxlm-base-uncased')
     inputs_dict = tokenizer("Welcome to use PaddlePaddle and PaddleNLP!")
     inputs = (
         np.array([inputs_dict['input_ids']]),
