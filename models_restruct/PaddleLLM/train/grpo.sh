@@ -39,12 +39,24 @@ export HF_DATASETS_DOWNLOAD_TIMEOUT=1
 export FLAGS_gemm_use_half_precision_compute_type=False
 export FLAGS_force_cublaslt_no_reduced_precision_reduction=True
 
+export FLAGS_custom_allreduce=0
 export FLAGS_mla_use_tensorcore=0
 export FLAGS_cascade_attention_max_partition_size=2048
+
+# 精度对齐
+export NVIDIA_TF32_OVERRIDE=0
+export FLAGS_embedding_deterministic=1
+export FLAGS_cudnn_deterministic=1
+
+# 实验环境变量设置
+export USE_FAST_TOKENIZER=1
+export IS_EB=0
+export FLAGS_use_auto_growth_pinned_allocator=1
 
 # 4. 启动训练脚本
 if ! pgrep -f reward_server.py > /dev/null; then
     echo "reward服务未运行"
+    unset http_proxy && unset https_proxy
     cd reward
     nohup python reward_server.py > reward_server.log 2>&1 &
     sleep 60s
@@ -62,4 +74,5 @@ python -u -m paddle.distributed.launch --devices "$ngpus" --log_dir  "log_grpo" 
     --max_steps ${steps} \
     --save_steps ${steps} \
     --eval_steps  ${steps} \
+    --kl_loss_coeff 0.000
     ${ext_args}
