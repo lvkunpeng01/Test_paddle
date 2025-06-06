@@ -28,8 +28,8 @@ jobs:
           docker run --rm --gpus all --net=host \
             ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddleqa:${{ matrix.images_version }} \
             /bin/bash -ec '
-              python3 -m pip install --pre paddlepaddle-gpu -i https://www.paddlepaddle.org.cn/packages/nightly/${{ matrix.cuda-version }}/ &&
-              python3 -c "import paddle; paddle.version.show(); paddle.utils.run_check()"
+              #python3 -m pip install --pre paddlepaddle-gpu -i https://www.paddlepaddle.org.cn/packages/nightly/${{ matrix.cuda-version }}/ &&
+              #python3 -c "import paddle; paddle.version.show(); paddle.utils.run_check()"
               exit 1
             ' || result=$?
           echo "result=$result"
@@ -55,15 +55,16 @@ jobs:
         with:
           path: artifacts
 
-      - name: Merge all failed.txt files
+      - name: Merge all failed.txt files (deduplicated)
         run: |
-          find artifacts -name 'failed.txt' -exec cat {} + > all_failed.txt || true
+          mkdir -p merged
+          find artifacts -name 'failed.txt' -exec cat {} + | sort | uniq > merged/all_failed.txt || true
 
       - name: Upload merged failure list
         uses: actions/upload-artifact@v4
         with:
           name: failed-combos
-          path: all_failed.txt
+          path: merged/all_failed.txt
           if-no-files-found: ignore
 
   create-issue-if-needed:
